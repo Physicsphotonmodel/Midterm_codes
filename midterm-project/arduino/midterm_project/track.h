@@ -11,7 +11,7 @@
 /*feel free to add your own function for convenience*/
 
 /*===========================import variable===========================*/
-int extern _Tp;
+int extern Tp;
 /*===========================import variable===========================*/
 
 // Write the voltage to motor.
@@ -25,7 +25,7 @@ void MotorInverter(int motor, bool& dir) {
 }  // MotorInverter
 
 // P/PID control Tracking
-void tracking(int l2, int l1, int m0, int r1, int r2) {
+void tracking(int l3, int l2, int m, int r2, int r3) {
     // TODO: find your own parameters!
     double _w0;  //
     double _w1;  //
@@ -33,7 +33,7 @@ void tracking(int l2, int l1, int m0, int r1, int r2) {
     double _Kp;  // p term parameter
     double _Kd;  // d term parameter (optional)
     double _Ki;  // i term parameter (optional) (Hint: 不要調太大)
-    double error = l2 * _w2 + l1 * _w1 + m0 * _w0 + r1 * (-_w1) + r2 * (-_w2);
+    double error = l3 * _w2 + l2 * _w1 + m * _w0 + r2 * (-_w1) + r3 * (-_w2);
     double vR, vL;  // 馬達左右轉速原始值(從PID control 計算出來)。Between -255 to 255.
     double adj_R = 1, adj_L = 1;  // 馬達轉速修正係數。MotorWriting(_Tp,_Tp)如果歪掉就要用參數修正。
 
