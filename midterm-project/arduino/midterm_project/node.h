@@ -7,8 +7,13 @@
 /***************************************************************************/
 
 /*===========================import variable===========================*/
-int extern Tp;
+int extern Tp; //use Tp directly, don't need to implement it, it is defined in midterm_project.ino 
 /*===========================import variable===========================*/
 
 // TODO: add some function to control your car when encounter a node
 // here are something you can try: left_turn, right_turn... etc.
+void TurnRight();
+
+void TurnLeft();
+
+void TurnBack();

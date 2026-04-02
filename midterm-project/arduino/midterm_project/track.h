@@ -11,13 +11,37 @@
 /*feel free to add your own function for convenience*/
 
 /*===========================import variable===========================*/
-int extern Tp;
+int extern Tp; //use Tp directly, don't need to implement it, it is defined in midterm_project.ino 
 /*===========================import variable===========================*/
 
 // Write the voltage to motor.
 void MotorWriting(double vL, double vR) {
-    // TODO: use TB6612 to control motor voltage & direction
-}  // MotorWriting
+  // TODO: use TB6612 to control motor voltage & direction
+  // MotorWriting
+    if (vR < 0) {
+        digitalWrite(MotorR_I3, LOW);
+        digitalWrite(MotorR_I4, HIGH);
+        vR = -vR;
+    } 
+    else if (vR > 0) {
+        digitalWrite(MotorR_I3, HIGH);
+        digitalWrite(MotorR_I4, LOW);
+    }
+  
+    if (vL < 0) {
+        digitalWrite(MotorL_I1, LOW);
+        digitalWrite(MotorL_I2, HIGH);
+        vL = -vL;
+    } 
+    else if (vL > 0) {
+        digitalWrite(MotorL_I1, HIGH);
+        digitalWrite(MotorL_I2, LOW);
+    }
+  
+    analogWrite(MotorL_PWM, vL);
+    analogWrite(MotorR_PWM, vR);
+}
+
 
 // Handle negative motor_PWMR value.
 void MotorInverter(int motor, bool& dir) {
@@ -25,20 +49,58 @@ void MotorInverter(int motor, bool& dir) {
 }  // MotorInverter
 
 // P/PID control Tracking
-void tracking(int l3, int l2, int m, int r2, int r3) {
+
+void Tracking_P(int l3, int l2, int m, int r2, int r3) {
+
+    double sum = l3 + l2 + m + r2 + r3;
+
+    if (sum == 0) {
+        MotorWriting(-150, -150); 
+        return;
+    }
+
+    double error = 0;
+    double w2 = 4, w3 = 8;
+    double Kp = 100;  
+  
+    error = (l3 * (-w3) + l2 * (-w2) + m * (0) + r2 * (w2) + r3 * (w3)) / sum;
+
+    double powerCorrection = Kp * error;
+    int vL = (Tp + powerCorrection);
+    int vR = (Tp - powerCorrection);
+
+    if (vL > 255) vL = 255; else if (vL < -255) vL = -255;
+    if (vR > 255) vR = 255; else if (vR < -255) vR = -255;
+
+    MotorWriting(vL, vR);
+}
+
+void Tracking_PD(int l3, int l2, int m, int r2, int r3) {
     // TODO: find your own parameters!
-    double _w0;  //
-    double _w1;  //
-    double _w2;  //
-    double _Kp;  // p term parameter
-    double _Kd;  // d term parameter (optional)
-    double _Ki;  // i term parameter (optional) (Hint: 不要調太大)
-    double error = l3 * _w2 + l2 * _w1 + m * _w0 + r2 * (-_w1) + r3 * (-_w2);
-    double vR, vL;  // 馬達左右轉速原始值(從PID control 計算出來)。Between -255 to 255.
-    double adj_R = 1, adj_L = 1;  // 馬達轉速修正係數。MotorWriting(_Tp,_Tp)如果歪掉就要用參數修正。
+    double sum = l3 + l2 + m + r2 + r3;
 
-    // TODO: complete your P/PID tracking code
+    if (sum == 0) {
+        MotorWriting(-150, -150);
+        return;
+    }
 
-    // end TODO
-    MotorWriting(adj_L * vL, adj_R * vR);
-}  // tracking
+    double w2 = 4;  //
+    double w3 = 8;  //
+    double error = 0;
+    static double lastError = 0;
+    error = (l3 * (-w3) + l2 * (-w2) + m * (0) + r2 * (w2) + r3 * (w3)) / sum;
+
+    double Kp = 75;  // p term parameter
+    double Kd = 25;  // d term parameter (optional)
+    
+    double dError = error - lastError;
+    double powerCorrection = Kp*error + Kd*dError;
+    lastError = error;    
+
+    int vL = (Tp + powerCorrection);
+    int vR = (Tp - powerCorrection);
+    if (vL > 255) vL = 255; else if (vL < -255) vL = -255;
+    if (vR > 255) vR = 255; else if (vR < -255) vR = -255;
+
+    MotorWriting(vL, vR);
+}  

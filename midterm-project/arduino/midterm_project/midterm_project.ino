@@ -127,13 +127,13 @@ void Search() {   //這裡只是大概寫一下之後還會再改
         send_msg('K'); 
         
         if (_cmd == LEFT_TURN) {
-            // turnLeft();
+            // TurnLeft();
         }
         else if (_cmd == RIGHT_TURN) {
-            // turnRight();
+            // TurnRight();
         }
         else if (_cmd == BACKWARD) {
-            // turnBack();
+            // TurnBack();
         }
 
         send_msg('L');  // if it leaves a node
@@ -142,7 +142,7 @@ void Search() {   //這裡只是大概寫一下之後還會再改
     }
 
     else {
-        // tracking(); 
+    // Tracking(l3, l2, m, r2, r3); 
     }
 }
 
