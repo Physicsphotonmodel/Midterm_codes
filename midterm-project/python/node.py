@@ -27,15 +27,15 @@ class Node:
 
     def set_successor(self, successor, direction, length=1):
         self.successors.append((successor, Direction(direction), int(length)))
-        print(f"For Node {self.index}, a successor {self.successors[-1]} is set.")
+        # print(f"For Node {self.index}, a successor {self.successors[-1]} is set.")
         return
 
     def get_direction(self, node):
 
-        for items in self.successors: 
-            if items.node == node: 
-                return self.direction
-            
+        for succ_node, direction, length in self.successors:
+            if succ_node.index == node.index:
+                return direction
+
         print(f"[Error] Node {node.index} is not adjacent to Node {self.index} ")
         #raise ValueError(f"Invalid Successor: {node.index})
         return 0
