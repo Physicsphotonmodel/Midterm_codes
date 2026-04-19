@@ -54,8 +54,6 @@ class Maze:
                     target_idx = int(target)
                     dist = row[dist_col] if pandas.notna(row[dist_col]) else 1
                     current_node.set_successor(self.node_dict[target_idx], d, dist)
-        
-        self.generate_coordinates()
 
     def generate_coordinates(self, start_node: Node):
         
