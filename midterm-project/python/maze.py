@@ -223,9 +223,9 @@ class Maze:
         """Estimates the physical execution time for a designated path."""
         if not path or len(path) < 2: return 0.0
         
-        TIME_TRAVEL_AND_STOP = 1.92  
-        TIME_TURN = 0.57             
-        TIME_U_TURN = 1.14           
+        TIME_TRAVEL_AND_STOP = 0.92
+        TIME_TURN = 0.25
+        TIME_U_TURN = 0.5       
 
         total_time = 0.0
         car_dir = current_car_dir

@@ -104,8 +104,8 @@ void Tracking_PD(int l3, int l2, int m, int r2, int r3) {
     
     error = (l3 * (-w3) + l2 * (-w2) + m * (0) + r2 * (w2) + r3 * (w3)) / sum;
 
-    double Kp = 40; 
-    double Kd = 25; 
+    double Kp = 10; 
+    double Kd = 5; 
 
     double dError = error - lastError;
     double powerCorrection = Kp * error + Kd * dError;
@@ -114,8 +114,8 @@ void Tracking_PD(int l3, int l2, int m, int r2, int r3) {
     int vL = (Tp + powerCorrection);
     int vR = (Tp - powerCorrection);
     
-    if (vL > 255) vL = 255; else if (vL < -255) vL = -255;
-    if (vR > 255) vR = 255; else if (vR < -255) vR = -255;
+    if (vL > 255) vL = 255; else if (vL < 0) vL = 0;
+    if (vR > 255) vR = 255; else if (vR < 0) vR = 0;
 #if DEBUG
     Serial3.print("vL/vR: ");
     Serial3.print(vL);

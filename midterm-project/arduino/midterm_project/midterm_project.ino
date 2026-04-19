@@ -6,7 +6,7 @@
 // Modify     [2026/04/05 Lumos]
 /***************************************************************************/
 
-#define DEBUG 1 // Debug flag
+#define DEBUG 0 // Debug flag
 
 #include <MFRC522.h>
 #include <SPI.h>
@@ -112,8 +112,8 @@ void SetState() {
 
     if (incoming_cmd == START) {
         state = true;
-    } else if (incoming_cmd == HALT) {
-        state = false;
+    // } else if (incoming_cmd == HALT) {
+    //     state = false;
     } else {
         _cmd = incoming_cmd;
     }
@@ -145,8 +145,7 @@ void Search() {
     r3 = analogRead(R3) > 100;
 
     if (l3 && r3) { 
-        
-        MotorWriting(100, 100);
+        MotorWriting(100, 100); // Brake immediately at node
         Serial3.println("K"); // Report node arrival to Python
         
         // Wait in loop until the next movement command is received
