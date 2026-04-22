@@ -6,7 +6,7 @@
 // Modify     [2026/04/05 Lumos]
 /***************************************************************************/
 
-#define DEBUG 1 // Debug flag
+#define DEBUG 0 // Debug flag
 
 #include <MFRC522.h>
 #include <SPI.h>
@@ -88,29 +88,20 @@ void SetState();  // State machine updater
 /*=========================== Function Prototypes ===========================*/
 
 void loop() {
-    // static unsigned long last_ping = 0;
+    static unsigned long last_ping = 0;
 
-    // if (!state) {
-    //     MotorWriting(0, 0);
-    //     // Send "READY" to Bluetooth every 1 second to indicate alive status
-    //     if (millis() - last_ping > 1000) {
-    //         Serial3.println("READY");
-    //         last_ping = millis();
-    //     }
-    // } else {
-    //     // Start searching once 's' is received
-    //     Search();
-    // }
-    // SetState();
-    MotorWriting(175,-175);
-    delay(340);
-    Stop();
-    delay(5000);
-    MotorWriting(255,255);
-    delay(920);
-    Stop();
-    delay(5000);
-
+    if (!state) {
+        MotorWriting(0, 0);
+        // Send "READY" to Bluetooth every 1 second to indicate alive status
+        if (millis() - last_ping > 1000) {
+            Serial3.println("READY");
+            last_ping = millis();
+        }
+    } else {
+        // Start searching once 's' is received
+        Search();
+    }
+    SetState();
 }
 
 /*
