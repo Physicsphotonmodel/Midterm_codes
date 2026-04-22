@@ -6,7 +6,7 @@
 // Modify     [2026/04/05 Lumos]
 /***************************************************************************/
 
-#define DEBUG 0 // Debug flag
+#define DEBUG 1 // Debug flag
 
 #include <MFRC522.h>
 #include <SPI.h>
@@ -77,6 +77,7 @@ void setup() {
 // IR sensor readings (0 -> white, 1 -> black)
 int l3 = 0, l2 = 0, m = 0, r2 = 0, r3 = 0;
 int Tp = 255; // Base motor power
+String cards="";
 bool state = false; // true = active, false = halt
 BT_CMD _cmd = NOTHING; 
 /*=========================== Initialize Variables ===========================*/
@@ -87,20 +88,29 @@ void SetState();  // State machine updater
 /*=========================== Function Prototypes ===========================*/
 
 void loop() {
-    static unsigned long last_ping = 0;
+    // static unsigned long last_ping = 0;
 
-    if (!state) {
-        MotorWriting(0, 0);
-        // Send "READY" to Bluetooth every 1 second to indicate alive status
-        if (millis() - last_ping > 1000) {
-            Serial3.println("READY");
-            last_ping = millis();
-        }
-    } else {
-        // Start searching once 's' is received
-        Search();
-    }
-    SetState();
+    // if (!state) {
+    //     MotorWriting(0, 0);
+    //     // Send "READY" to Bluetooth every 1 second to indicate alive status
+    //     if (millis() - last_ping > 1000) {
+    //         Serial3.println("READY");
+    //         last_ping = millis();
+    //     }
+    // } else {
+    //     // Start searching once 's' is received
+    //     Search();
+    // }
+    // SetState();
+    MotorWriting(175,-175);
+    delay(340);
+    Stop();
+    delay(5000);
+    MotorWriting(255,255);
+    delay(920);
+    Stop();
+    delay(5000);
+
 }
 
 /*
@@ -135,7 +145,11 @@ void Search() {
         }
         uidStr.toUpperCase();
         // Transmit UID to Python (e.g., "ID10BA617E")
-        Serial3.println(uidStr); 
+        if(cards != uidStr) {
+            cards = uidStr;
+            Serial3.println(uidStr); 
+            TurnBack();
+        }
     }
 
     l3 = analogRead(L3) > 100;
@@ -145,7 +159,7 @@ void Search() {
     r3 = analogRead(R3) > 100;
 
     if (l3 && r3) { 
-        MotorWriting(100, 100); // Brake immediately at node
+        MotorWriting(255, 255); // Brake immediately at node
         Serial3.println("K"); // Report node arrival to Python
         
         // Wait in loop until the next movement command is received

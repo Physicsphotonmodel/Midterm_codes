@@ -5,9 +5,8 @@
 // Functions  [Stop, TurnRight, TurnLeft, TurnBack, Moveforward]
 // Modify     [2026/04/05 Lumos]
 /***************************************************************************/
-
+int slow=175;
 int extern Tp; // Defined in midterm_project.ino
-
 /*
  * Halts both motors immediately.
  */
@@ -21,7 +20,7 @@ void Stop() {
 void TurnRight() {
     int l3, l2, m, r2, r3;
     do {
-        MotorWriting(MAX_POWER, MAX_POWER);
+        MotorWriting(slow, slow);
         l3 = analogRead(L3) > 100;
         l2 = analogRead(L2) > 100;
         m = analogRead(M) > 100;
@@ -29,17 +28,18 @@ void TurnRight() {
         r3 = analogRead(R3) > 100;
     } while(l3 * l2 * m * r2 * r3 == 1);
     
-    MotorWriting(MAX_POWER, -MAX_POWER);
+    MotorWriting(slow, -slow);
     delay(125);
     
     do {
-        MotorWriting(MAX_POWER-50, 0);
+        MotorWriting(slow-50, -(slow-50));
         l3 = analogRead(L3) > 100;
         l2 = analogRead(L2) > 100;
         m = analogRead(M) > 100;
         r2 = analogRead(R2) > 100;
         r3 = analogRead(R3) > 100;
     } while(!((l3==0) && (l2==0) && (m==0) && (r2==0) && (r3==1)));
+    MotorWriting(MAX_POWER, MAX_POWER);
 }
 
 /*
@@ -48,7 +48,7 @@ void TurnRight() {
 void TurnLeft() {
     int l3, l2, m, r2, r3;
     do {
-        MotorWriting(MAX_POWER, MAX_POWER);
+        MotorWriting(slow, slow);
         l3 = analogRead(L3) > 100;
         l2 = analogRead(L2) > 100;
         m = analogRead(M) > 100;
@@ -56,24 +56,25 @@ void TurnLeft() {
         r3 = analogRead(R3) > 100;
     } while(l3 * l2 * m * r2 * r3 == 1);
     
-    MotorWriting(-MAX_POWER, MAX_POWER);
+    MotorWriting(-slow, slow);
     delay(125);
     
     do {
-        MotorWriting(0, MAX_POWER-50);
+        MotorWriting(-(slow-50), slow-50);
         l3 = analogRead(L3) > 100;
         l2 = analogRead(L2) > 100;
         m = analogRead(M) > 100;
         r2 = analogRead(R2) > 100;
         r3 = analogRead(R3) > 100;
     } while(!((l3==1) && (l2==0) && (m==0) && (r2==0) && (r3==0)));
+    MotorWriting(MAX_POWER, MAX_POWER);
 }
 
 /*
  * Executes a 180-degree U-turn.
  */
 void TurnBack() {
-    MotorWriting(-MAX_POWER, MAX_POWER);
+    MotorWriting(-slow, slow);
     delay(400);
     int l3 = analogRead(L3) > 100;
     int l2 = analogRead(L2) > 100;
@@ -82,7 +83,7 @@ void TurnBack() {
     int r3 = analogRead(R3) > 100;
     
     do {
-        MotorWriting(0, MAX_POWER-50);
+        MotorWriting(0, slow-50);
         l3 = analogRead(L3) > 100;
         l2 = analogRead(L2) > 100;
         m = analogRead(M) > 100;
@@ -92,14 +93,14 @@ void TurnBack() {
     
     
     do {
-        MotorWriting(0, MAX_POWER-50);
+        MotorWriting(-(slow-50), slow-50);
         l3 = analogRead(L3) > 100;
         l2 = analogRead(L2) > 100;
         m = analogRead(M) > 100;
         r2 = analogRead(R2) > 100;
         r3 = analogRead(R3) > 100;
     } while(!((l3==1) && (l2==0) && (m==0) && (r2==0) && (r3==0)));
-
+    MotorWriting(MAX_POWER, MAX_POWER);
 }
 /*
  * Moves forward slightly to bypass the current node intersection.

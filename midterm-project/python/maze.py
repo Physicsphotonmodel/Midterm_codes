@@ -224,8 +224,8 @@ class Maze:
         if not path or len(path) < 2: return 0.0
         
         TIME_TRAVEL_AND_STOP = 0.92
-        TIME_TURN = 0.25
-        TIME_U_TURN = 0.5       
+        TIME_TURN = 0.34
+        TIME_U_TURN = 0.68       
 
         total_time = 0.0
         car_dir = current_car_dir
@@ -419,10 +419,8 @@ class Maze:
         # 關鍵：回傳這三個值
         return master_path, total_expected_score, time_spent
     def strategy_pacman_3(self, start_node: Node, initial_car_dir: Direction, treasure_nodes: List[int] = None, time_limit: float = 70.0):
-        """
-        Look-ahead Depth 3: 一次評估未來三個點的最優組合。
-        回傳: (path_nodes, total_score, total_time)
-        """
+        """Look-ahead Depth 3: 一次評估未來三個點的最優組合。回傳: (path_nodes, total_score, total_time)"""
+        
         if treasure_nodes is None:
             treasure_nodes = self.find_treasure_nodes()
         
@@ -439,6 +437,7 @@ class Maze:
         log.info(f"--- 開始三層規劃策略 (Depth 3) ---")
 
         while unvisited and time_spent < time_limit:
+            remaining_time = time_limit - time_spent
             best_t1_idx = None
             best_t1_path = []
             best_t1_time = 0.0
@@ -446,82 +445,114 @@ class Maze:
             max_combined_cp = -1.0
 
             targets = list(unvisited)
+
+            if remaining_time < 10.0:
+                log.info(f"!!! 進入終局衝刺模式 (剩餘 {remaining_time:.1f}s) !!!")
+                max_end_game_score = -1
+                
+                for t_idx in targets:
+                    node_t = self.node_dict[t_idx]
+                    path_t = self.BFS_2(current_node, node_t)
+                    if not path_t: continue
+                    time_t = self._estimate_time_cost(path_t, current_dir)
+                        # 檢查是否能在時限內到達
+                    if time_spent + time_t <= time_limit:
+                        score_t = node_scores[t_idx]
+                        # 在終局模式，我們找分數絕對值最高的點
+                        if score_t > max_end_game_score:
+                            max_end_game_score = score_t
+                            best_t1_idx = t_idx
+                            best_t1_path = path_t
+                            best_t1_time = time_t
+                            
+                            # 更新模擬方向
+                            temp_dir = current_dir
+                            for i in range(len(path_t)-1):
+                                _, temp_dir = self.getAction(temp_dir, path_t[i], path_t[i+1])
+                            best_t1_final_dir = temp_dir
+                
+                if best_t1_idx:
+                    log.info(f"Last Goal: {best_t1_idx} !!!")
+                else:
+                    log.info("No points could arrive in the remaining time")
+                    break
             
             # 第一層搜尋 (T1)
-            for t1_idx in targets:
-                node1 = self.node_dict[t1_idx]
-                path1 = self.BFS_2(current_node, node1)
-                if not path1: continue
-                time1 = self._estimate_time_cost(path1, current_dir)
-                if time_spent + time1 > time_limit: continue
+            else:
+                for t1_idx in targets:
+                    node1 = self.node_dict[t1_idx]
+                    path1 = self.BFS_2(current_node, node1)
+                    if not path1: continue
+                    time1 = self._estimate_time_cost(path1, current_dir)
+                    if time_spent + time1 > time_limit: continue
                 
-                score1 = node_scores[t1_idx]
-                dir_after_1 = current_dir
-                for i in range(len(path1)-1):
-                    _, dir_after_1 = self.getAction(dir_after_1, path1[i], path1[i+1])
+                    score1 = node_scores[t1_idx]
+                    dir_after_1 = current_dir
+                    for i in range(len(path1)-1):
+                        _, dir_after_1 = self.getAction(dir_after_1, path1[i], path1[i+1])
 
-                # 第二層搜尋 (T2)
-                remaining2 = [t for t in targets if t != t1_idx]
-                if not remaining2:
-                    cp = score1 / time1
-                    if cp > max_combined_cp:
-                        max_combined_cp, best_t1_idx, best_t1_path, best_t1_time, best_t1_final_dir = cp, t1_idx, path1, time1, dir_after_1
-                    continue
+                    # 第二層搜尋 (T2)
+                    remaining2 = [t for t in targets if t != t1_idx]
+                    if not remaining2:
+                        cp = score1 / time1
+                        if cp > max_combined_cp:
+                            max_combined_cp, best_t1_idx, best_t1_path, best_t1_time, best_t1_final_dir = cp, t1_idx, path1, time1, dir_after_1
+                        continue
 
-                for t2_idx in remaining2:
-                    node2 = self.node_dict[t2_idx]
-                    path2 = self.BFS_2(node1, node2)
-                    if not path2: continue
-                    time2 = self._estimate_time_cost(path2, dir_after_1)
-                    score2 = node_scores[t2_idx]
+                    for t2_idx in remaining2:
+                        node2 = self.node_dict[t2_idx]
+                        path2 = self.BFS_2(node1, node2)
+                        if not path2: continue
+                        time2 = self._estimate_time_cost(path2, dir_after_1)
+                        score2 = node_scores[t2_idx]
                     
-                    if time_spent + time1 + time2 > time_limit:
-                        cp = score1 / time1 # 只能走到 T1
-                    else:
-                        dir_after_2 = dir_after_1
-                        for i in range(len(path2)-1):
-                            _, dir_after_2 = self.getAction(dir_after_2, path2[i], path2[i+1])
-                        
-                        # 第三層搜尋 (T3)
-                        remaining3 = [t for t in remaining2 if t != t2_idx]
-                        if not remaining3:
-                            cp = (score1 + score2) / (time1 + time2)
+                        if time_spent + time1 + time2 > time_limit:
+                            cp = score1 / time1 # 只能走到 T1
                         else:
-                            best_t3_cp = -1.0
-                            for t3_idx in remaining3:
-                                node3 = self.node_dict[t3_idx]
-                                path3 = self.BFS_2(node2, node3)
-                                if not path3: continue
-                                time3 = self._estimate_time_cost(path3, dir_after_2)
-                                score3 = node_scores[t3_idx]
+                            dir_after_2 = dir_after_1
+                            for i in range(len(path2)-1):
+                                _, dir_after_2 = self.getAction(dir_after_2, path2[i], path2[i+1])
+                        
+                            # 第三層搜尋 (T3)
+                            remaining3 = [t for t in remaining2 if t != t2_idx]
+                            if not remaining3:
+                                cp = (score1 + score2) / (time1 + time2)
+                            else:
+                                best_t3_cp = -1.0
+                                for t3_idx in remaining3:
+                                    node3 = self.node_dict[t3_idx]
+                                    path3 = self.BFS_2(node2, node3)
+                                    if not path3: continue
+                                    time3 = self._estimate_time_cost(path3, dir_after_2)
+                                    score3 = node_scores[t3_idx]
                                 
-                                if time_spent + time1 + time2 + time3 > time_limit:
-                                    temp_cp = (score1 + score2) / (time1 + time2)
-                                else:
-                                    temp_cp = (score1 + score2 + score3) / (time1 + time2 + time3)
+                                    if time_spent + time1 + time2 + time3 > time_limit:
+                                        temp_cp = (score1 + score2) / (time1 + time2)
+                                    else:
+                                        temp_cp = (score1 + score2 + score3) / (time1 + time2 + time3)
                                 
-                                if temp_cp > best_t3_cp:
-                                    best_t3_cp = temp_cp
-                            cp = best_t3_cp
+                                    if temp_cp > best_t3_cp:
+                                        best_t3_cp = temp_cp
+                                cp = best_t3_cp
 
-                    if cp > max_combined_cp:
-                        max_combined_cp = cp
-                        best_t1_idx = t1_idx
-                        best_t1_path = path1
-                        best_t1_time = time1
-                        best_t1_final_dir = dir_after_1
+                        if cp > max_combined_cp:
+                            max_combined_cp = cp
+                            best_t1_idx = t1_idx
+                            best_t1_path = path1
+                            best_t1_time = time1
+                            best_t1_final_dir = dir_after_1
 
-            if best_t1_idx is None:
-                break
+                if best_t1_idx is None:
+                    break
 
-            # 確定移動
-            total_expected_score += node_scores[best_t1_idx]
-            time_spent += best_t1_time
-            current_node = self.node_dict[best_t1_idx]
-            current_dir = best_t1_final_dir
-            unvisited.remove(best_t1_idx)
-            master_path.extend(best_t1_path[1:])
+                # 確定移動
+                total_expected_score += node_scores[best_t1_idx]
+                time_spent += best_t1_time
+                current_node = self.node_dict[best_t1_idx]
+                current_dir = best_t1_final_dir
+                unvisited.remove(best_t1_idx)
+                master_path.extend(best_t1_path[1:])
             
-            log.info(f"Depth 3 決策: 前往 {best_t1_idx} (預計組合 CP: {max_combined_cp:.2f})")
+                log.info(f"Depth 3 決策: Head to {best_t1_idx} | Expected Gain: {node_scores[best_t1_idx]} | Time Cost: {best_t1_time} | (Combined CP: {max_combined_cp:.2f})")
 
         return master_path, total_expected_score, time_spent
