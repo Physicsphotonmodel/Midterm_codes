@@ -74,7 +74,7 @@ void TurnLeft() {
  * Executes a 180-degree U-turn.
  */
 void TurnBack() {
-    MotorWriting(-slow, slow);
+    MotorWriting(-(slow+20), slow);
     delay(400);
     int l3 = analogRead(L3) > 100;
     int l2 = analogRead(L2) > 100;
@@ -93,7 +93,7 @@ void TurnBack() {
     
     
     do {
-        MotorWriting(-(slow-50), slow-50);
+        MotorWriting(-(slow-30), slow-50);
         l3 = analogRead(L3) > 100;
         l2 = analogRead(L2) > 100;
         m = analogRead(M) > 100;
