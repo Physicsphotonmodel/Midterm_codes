@@ -242,8 +242,6 @@ class Maze:
         return total_time
 
     def strategy_pacman_3(self, start_node: Node, initial_car_dir: Direction, treasure_nodes: List[int] = None, time_limit: float = 70.0):
-        """Look-ahead Depth 3 return (path_nodes, total_score, total_time)"""
-        
         if treasure_nodes is None:
             treasure_nodes = self.find_treasure_nodes()
         
@@ -267,19 +265,18 @@ class Maze:
 
             targets = list(unvisited)
 
-            if remaining_time < 10.0:
-                log.info(f"Final {remaining_time:.1f}s!")
-                max_end_game_score = -1
-                
+            if remaining_time < 41.0:
+                log.info(f"Final {remaining_time:.1f}s!!")
+                min_time_cost = float('inf')
                 for t_idx in targets:
                     node_t = self.node_dict[t_idx]
                     path_t = self.BFS_2(current_node, node_t)
                     if not path_t: continue
                     time_t = self._estimate_time_cost(path_t, current_dir)
+                
                     if time_spent + time_t <= time_limit:
-                        score_t = node_scores[t_idx]
-                        if score_t > max_end_game_score:
-                            max_end_game_score = score_t
+                        if time_t < min_time_cost:
+                            min_time_cost = time_t
                             best_t1_idx = t_idx
                             best_t1_path = path_t
                             best_t1_time = time_t
@@ -288,13 +285,7 @@ class Maze:
                             for i in range(len(path_t)-1):
                                 _, temp_dir = self.getAction(temp_dir, path_t[i], path_t[i+1])
                             best_t1_final_dir = temp_dir
-                
-                if best_t1_idx:
-                    log.info(f"Last Goal: {best_t1_idx} !!!")
-                else:
-                    log.info("No points could arrive in the remaining time")
-                    break
-            # first layer
+
             else:
                 for t1_idx in targets:
                     node1 = self.node_dict[t1_idx]
@@ -308,7 +299,6 @@ class Maze:
                     for i in range(len(path1)-1):
                         _, dir_after_1 = self.getAction(dir_after_1, path1[i], path1[i+1])
 
-                    # second layer
                     remaining2 = [t for t in targets if t != t1_idx]
                     if not remaining2:
                         cp = score1 / time1
@@ -330,7 +320,6 @@ class Maze:
                             for i in range(len(path2)-1):
                                 _, dir_after_2 = self.getAction(dir_after_2, path2[i], path2[i+1])
                         
-                            # third layer
                             remaining3 = [t for t in remaining2 if t != t2_idx]
                             if not remaining3:
                                 cp = (score1 + score2) / (time1 + time2)
@@ -359,16 +348,20 @@ class Maze:
                             best_t1_time = time1
                             best_t1_final_dir = dir_after_1
 
-                if best_t1_idx is None:
-                    break
+            if best_t1_idx is not None:
 
                 total_expected_score += node_scores[best_t1_idx]
                 time_spent += best_t1_time
+
                 current_node = self.node_dict[best_t1_idx]
                 current_dir = best_t1_final_dir
+
                 unvisited.remove(best_t1_idx)
+
                 master_path.extend(best_t1_path[1:])
-            
-                log.info(f"Head to {best_t1_idx} | Expected Gain: {node_scores[best_t1_idx]} | Time Cost: {best_t1_time} | (Combined CP: {max_combined_cp:.2f})")
+                log.info(f"Target: {best_t1_idx} | Remaining: {time_limit - time_spent:.1f}s")
+            else:
+                log.info("Stop planning.")
+                break
 
         return master_path, total_expected_score, time_spent
