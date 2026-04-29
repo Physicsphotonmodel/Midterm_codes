@@ -265,7 +265,7 @@ class Maze:
 
             targets = list(unvisited)
 
-            if remaining_time < 41.0:
+            if remaining_time < 41:
                 log.info(f"Final {remaining_time:.1f}s!!")
                 min_time_cost = float('inf')
                 for t_idx in targets:
@@ -359,7 +359,7 @@ class Maze:
                 unvisited.remove(best_t1_idx)
 
                 master_path.extend(best_t1_path[1:])
-                log.info(f"Target: {best_t1_idx} | Remaining: {time_limit - time_spent:.1f}s")
+                log.info(f"Target: {best_t1_idx} | Remaining: {time_limit - time_spent:.1f} | Score: {total_expected_score}")
             else:
                 log.info("Stop planning.")
                 break

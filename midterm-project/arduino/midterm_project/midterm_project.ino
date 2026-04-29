@@ -102,6 +102,19 @@ void loop() {
         Search();
     }
     SetState();
+    //TESTER
+    // MotorWriting(255,255);
+    // delay(920);
+    // Stop();
+    // delay(5000);
+    // MotorWriting(-255,255);
+    // delay(340);
+    // Stop();
+    // delay(5000);
+    // MotorWriting(255,-255);
+    // delay(340);
+    // Stop();
+    // delay(5000);
 }
 
 /*
