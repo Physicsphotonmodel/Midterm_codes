@@ -241,185 +241,8 @@ class Maze:
             
         return total_time
 
-    def strategy_pacman_1(self, start_node: Node, initial_car_dir: Direction, treasure_nodes: List[int] = None, time_limit: float = 80.0) -> List[Node]:
-        """calculate cp of treasure node, look up only one node each time"""
-        
-        if treasure_nodes is None:
-            treasure_nodes = self.find_treasure_nodes()
-    
-        log.info(f"--- Initiating Time-Bound Strategy: {treasure_nodes}) ---")
-
-        # 1. get points
-        node_scores = self.get_all_node_scores(treasure_nodes)
-        
-        # 2. only care treasure nodes that haven't been to
-        unvisited_treasures = set(treasure_nodes)
-        unvisited_treasures.discard(start_node.index)
-        
-        current_node = start_node
-        current_dir = initial_car_dir
-        time_spent = 0.0
-        total_expected_score = 0
-        master_path = [current_node]
-
-        while unvisited_treasures and time_spent < time_limit:
-            best_target_idx = None
-            best_path = []
-            best_cp = -1.0
-            best_time_cost = 0.0
-            best_path_score = 0
-            best_final_dir = current_dir
-
-            # only search for treasure nodes to calculate cp
-            for target_idx in list(unvisited_treasures):
-                target_node = self.node_dict.get(target_idx)
-                temp_path = self.BFS_2(current_node, target_node)
-                if not temp_path: continue
-
-                est_time = self._estimate_time_cost(temp_path, current_dir)
-                if time_spent + est_time > time_limit:
-                    continue 
-
-                path_score = node_scores[target_idx]
-                
-                cp_value = path_score / est_time if est_time > 0 else 0
-
-                if cp_value > best_cp:
-                    best_cp = cp_value
-                    best_target_idx = target_idx
-                    best_path = temp_path
-                    best_time_cost = est_time
-                    best_path_score = path_score
-                    
-                    temp_dir = current_dir
-                    for i in range(len(temp_path)-1):
-                        _, temp_dir = self.getAction(temp_dir, temp_path[i], temp_path[i+1])
-                    best_final_dir = temp_dir
-
-                # print(f"Node {target_idx}: Score={path_score}, Time={est_time:.2f}, CP={cp_value:.4f}")
-
-            if best_target_idx is None:
-                log.info("Time is insufficient to go to the next point. Stop plaanning")
-                break
-
-            total_expected_score += best_path_score
-            time_spent += best_time_cost
-            current_node = self.node_dict[best_target_idx]
-            current_dir = best_final_dir
-            unvisited_treasures.remove(best_target_idx)
-            
-            master_path.extend(best_path[1:])
-            log.info(f"Targeting Node {best_target_idx} | Expected Gain: {node_scores[best_target_idx]} | Time Cost: {best_time_cost:.1f}s")
-
-        log.info(f"--- Planning Complete! Est. Score: {total_expected_score} | Est. Time: {time_spent:.1f}s ---")
-        return master_path
-    
-    def strategy_pacman_2(self, start_node: Node, initial_car_dir: Direction, treasure_nodes: List[int] = None, time_limit: float = 80.0):
-        """一次規劃兩個點的最優路徑 (Look-ahead Depth 2)回傳: (path_nodes, total_score, total_time)"""
-        # 1. Initialize treasure nodes
-        if treasure_nodes is None:
-            treasure_nodes = self.find_treasure_nodes()
-        
-        # 2. get scores of treasure nodes
-        node_scores = self.get_all_node_scores(treasure_nodes)
-        
-        unvisited = set(treasure_nodes)
-        unvisited.discard(start_node.index)
-        
-        current_node = start_node
-        current_dir = initial_car_dir
-        
-        time_spent = 0.0
-        total_expected_score = 0
-        master_path = [current_node]
-
-        log.info(f"--- start oppimization ---")
-
-        while unvisited and time_spent < time_limit:
-            best_t1_idx = None
-            best_t1_path = []
-            best_t1_time = 0.0
-            best_t1_final_dir = current_dir
-            max_combined_cp = -1.0
-
-            targets = list(unvisited)
-            
-            # --- first travel (下一個點 T1) ---
-            for t1_idx in targets:
-                node1 = self.node_dict[t1_idx]
-                path1 = self.BFS_2(current_node, node1)
-                if not path1: continue
-                
-                time1 = self._estimate_time_cost(path1, current_dir)
-                if time_spent + time1 > time_limit: continue
-                
-                score1 = node_scores[t1_idx]
-                
-                # 模擬走完第一步後的車頭方向
-                dir_after_1 = current_dir
-                temp_p = path1
-                for i in range(len(temp_p) - 1):
-                    _, dir_after_1 = self.getAction(dir_after_1, temp_p[i], temp_p[i+1])
-                
-                # --- 第二層遍歷 (再下一個點 T2) ---
-                remaining = [t for t in targets if t != t1_idx]
-                
-                if not remaining:
-                    # 如果沒剩其他點，CP 就只看 T1
-                    combined_cp = score1 / time1
-                else:
-                    best_t2_cp_for_t1 = -1.0
-                    for t2_idx in remaining:
-                        node2 = self.node_dict[t2_idx]
-                        path2 = self.BFS_2(node1, node2)
-                        if not path2: continue
-                        
-                        time2 = self._estimate_time_cost(path2, dir_after_1)
-                        score2 = node_scores[t2_idx]
-                        
-                        # 兩步組合 CP 值 = 總分 / 總時
-                        # 如果加第二步會超時，則此組合的 CP 只看第一步的貢獻
-                        if time_spent + time1 + time2 > time_limit:
-                            temp_cp = score1 / time1
-                        else:
-                            temp_cp = (score1 + score2) / (time1 + time2)
-                        
-                        if temp_cp > best_t2_cp_for_t1:
-                            best_t2_cp_for_t1 = temp_cp
-                    
-                    combined_cp = best_t2_cp_for_t1
-
-                # 選擇讓「未來兩步 CP 平均最高」的第一個目標
-                if combined_cp > max_combined_cp:
-                    max_combined_cp = combined_cp
-                    best_t1_idx = t1_idx
-                    best_t1_path = path1
-                    best_t1_time = time1
-                    best_t1_final_dir = dir_after_1
-
-            # 判定是否有可執行的目標
-            if best_t1_idx is None:
-                log.info("時間不足以抵達下一個點，停止規劃。")
-                break
-
-            # 確定前往最佳的 T1
-            total_expected_score += node_scores[best_t1_idx]
-            time_spent += best_t1_time
-            
-            current_node = self.node_dict[best_t1_idx]
-            current_dir = best_t1_final_dir
-            unvisited.remove(best_t1_idx)
-            
-            # 將路徑加入主路徑 (去掉重複的起點)
-            master_path.extend(best_t1_path[1:])
-            log.info(f"Targeting Node {best_t1_idx} | Combined CP: {max_combined_cp:.2f} | Time Cost: {best_t1_time:.1f}s")
-
-        log.info(f"--- 規劃完成！預計總分: {total_expected_score}, 總時: {time_spent:.2f}s ---")
-        
-        # 關鍵：回傳這三個值
-        return master_path, total_expected_score, time_spent
     def strategy_pacman_3(self, start_node: Node, initial_car_dir: Direction, treasure_nodes: List[int] = None, time_limit: float = 70.0):
-        """Look-ahead Depth 3: 一次評估未來三個點的最優組合。回傳: (path_nodes, total_score, total_time)"""
+        """Look-ahead Depth 3 return (path_nodes, total_score, total_time)"""
         
         if treasure_nodes is None:
             treasure_nodes = self.find_treasure_nodes()
@@ -433,8 +256,6 @@ class Maze:
         time_spent = 0.0
         total_expected_score = 0
         master_path = [current_node]
-
-        log.info(f"--- 開始三層規劃策略 (Depth 3) ---")
 
         while unvisited and time_spent < time_limit:
             remaining_time = time_limit - time_spent
@@ -447,7 +268,7 @@ class Maze:
             targets = list(unvisited)
 
             if remaining_time < 10.0:
-                log.info(f"!!! 進入終局衝刺模式 (剩餘 {remaining_time:.1f}s) !!!")
+                log.info(f"Final {remaining_time:.1f}s!")
                 max_end_game_score = -1
                 
                 for t_idx in targets:
@@ -455,17 +276,14 @@ class Maze:
                     path_t = self.BFS_2(current_node, node_t)
                     if not path_t: continue
                     time_t = self._estimate_time_cost(path_t, current_dir)
-                        # 檢查是否能在時限內到達
                     if time_spent + time_t <= time_limit:
                         score_t = node_scores[t_idx]
-                        # 在終局模式，我們找分數絕對值最高的點
                         if score_t > max_end_game_score:
                             max_end_game_score = score_t
                             best_t1_idx = t_idx
                             best_t1_path = path_t
                             best_t1_time = time_t
                             
-                            # 更新模擬方向
                             temp_dir = current_dir
                             for i in range(len(path_t)-1):
                                 _, temp_dir = self.getAction(temp_dir, path_t[i], path_t[i+1])
@@ -476,8 +294,7 @@ class Maze:
                 else:
                     log.info("No points could arrive in the remaining time")
                     break
-            
-            # 第一層搜尋 (T1)
+            # first layer
             else:
                 for t1_idx in targets:
                     node1 = self.node_dict[t1_idx]
@@ -491,7 +308,7 @@ class Maze:
                     for i in range(len(path1)-1):
                         _, dir_after_1 = self.getAction(dir_after_1, path1[i], path1[i+1])
 
-                    # 第二層搜尋 (T2)
+                    # second layer
                     remaining2 = [t for t in targets if t != t1_idx]
                     if not remaining2:
                         cp = score1 / time1
@@ -507,13 +324,13 @@ class Maze:
                         score2 = node_scores[t2_idx]
                     
                         if time_spent + time1 + time2 > time_limit:
-                            cp = score1 / time1 # 只能走到 T1
+                            cp = score1 / time1
                         else:
                             dir_after_2 = dir_after_1
                             for i in range(len(path2)-1):
                                 _, dir_after_2 = self.getAction(dir_after_2, path2[i], path2[i+1])
                         
-                            # 第三層搜尋 (T3)
+                            # third layer
                             remaining3 = [t for t in remaining2 if t != t2_idx]
                             if not remaining3:
                                 cp = (score1 + score2) / (time1 + time2)
@@ -545,7 +362,6 @@ class Maze:
                 if best_t1_idx is None:
                     break
 
-                # 確定移動
                 total_expected_score += node_scores[best_t1_idx]
                 time_spent += best_t1_time
                 current_node = self.node_dict[best_t1_idx]
@@ -553,6 +369,6 @@ class Maze:
                 unvisited.remove(best_t1_idx)
                 master_path.extend(best_t1_path[1:])
             
-                log.info(f"Depth 3 決策: Head to {best_t1_idx} | Expected Gain: {node_scores[best_t1_idx]} | Time Cost: {best_t1_time} | (Combined CP: {max_combined_cp:.2f})")
+                log.info(f"Head to {best_t1_idx} | Expected Gain: {node_scores[best_t1_idx]} | Time Cost: {best_t1_time} | (Combined CP: {max_combined_cp:.2f})")
 
         return master_path, total_expected_score, time_spent

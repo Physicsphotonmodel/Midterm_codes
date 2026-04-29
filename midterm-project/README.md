@@ -45,12 +45,7 @@ Navigate to the `python` directory and execute the main control script.
 
 **Mode 0 (Treasure Hunting - Competition Mode):**
 ```bash
-python main.py 0 --maze-file "data/small_maze.csv" --team-name "TEAM_7"
-```
-
-**Mode 1 (Self-Testing):**
-```bash
-python main.py 1 --maze-file "data/test_maze.csv" --team-name "TEAM_7"
+python main.py 0 --dir 2 --maze-file "data/big_maze_114.csv"
 ```
 
 ### 3. Handshake Sequence

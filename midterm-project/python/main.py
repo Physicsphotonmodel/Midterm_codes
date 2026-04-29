@@ -47,7 +47,7 @@ async def main(mode: int, dir: int,bt_port: str, team_name: str, server_url: str
     
 
     # prevent the case that start point is not at 1
-    my_start_index = 1
+    my_start_index = 25
     start_node = maze.node_dict[my_start_index] 
     maze.generate_coordinates(start_node)
 
