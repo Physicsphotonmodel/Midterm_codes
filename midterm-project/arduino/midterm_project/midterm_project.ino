@@ -148,12 +148,7 @@ void Search() {
             uidStr += String(id[i], HEX);
         }
         uidStr.toUpperCase();
-        // Transmit UID to Python (e.g., "ID10BA617E")
-        if(cards != uidStr) {
-            cards = uidStr;
-            Serial3.println(uidStr); 
-            TurnBack();
-        }
+        Serial3.println(uidStr); 
     }
 
     l3 = analogRead(L3) > 100;
@@ -163,7 +158,7 @@ void Search() {
     r3 = analogRead(R3) > 100;
 
     if (l3 && r3) { 
-        MotorWriting(255, 255); // Brake immediately at node
+        MotorWriting(100, 100); // Brake immediately at node
         Serial3.println("K"); // Report node arrival to Python
         
         // Wait in loop until the next movement command is received

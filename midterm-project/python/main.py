@@ -110,10 +110,10 @@ async def main(mode: int, dir: int,bt_port: str, team_name: str, server_url: str
                         uid_str = line[2:] 
                         log.info(f"Card ID: {uid_str}")
                         scoreboard.add_UID(uid_str)
-                        if action_list and action_list[0] == 'b':
-                            dropped_cmd = action_list.pop(0)
-                        else:
-                            log.warning("Next command is not 'b'?????")
+                        # if action_list and action_list[0] == 'b':   
+                        #     dropped_cmd = action_list.pop(0)
+                        # else:
+                        #     log.warning("Next command is not 'b'?????")
                         time.sleep(0.1) 
                         
                     # Handle Node Arrival ('K') and dispatch next command
